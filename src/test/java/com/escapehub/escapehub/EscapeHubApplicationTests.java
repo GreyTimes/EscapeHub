@@ -8,6 +8,7 @@ class EscapeHubApplicationTests {
 
     @Test
     void contextLoads() {
+        // Verifies that the Spring Boot application starts successfully.
     }
 
 }
