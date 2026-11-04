@@ -1,0 +1,50 @@
+
+name: User Story
+description: Create a new user story for EscapeHub
+title: "[STORY] "
+labels: ["user-story"]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: User Story
+      description: Describe the functionality from the user's perspective.
+      placeholder: "As a player, I want to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What must happen for this story to be considered complete?
+      placeholder: |
+        - Given...
+        - When...
+        - Then...
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical Notes
+      description: Relevant implementation details or dependencies.
+    validations:
+      required: false
+
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimate (Story Points)
+      placeholder: "1, 2, 3, 5 or 8"
+    validations:
+      required: true
+
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing Requirements
+      description: Which tests will demonstrate that the story works?
+    validations:
+      required: true

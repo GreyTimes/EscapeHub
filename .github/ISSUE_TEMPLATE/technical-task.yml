@@ -1,0 +1,44 @@
+name: Technical Task
+description: Create a technical or infrastructure task
+title: "[TASK] "
+labels: ["technical-task"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What needs to be accomplished?
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Details
+      description: Explain the proposed technical approach.
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How will we verify completion?
+    validations:
+      required: true
+
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimate (Story Points)
+      placeholder: "1, 2, 3, 5 or 8"
+    validations:
+      required: true
+
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing
+      description: What checks or tests are required?
+    validations:
+      required: true
