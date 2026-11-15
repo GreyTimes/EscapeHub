@@ -5,7 +5,7 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: What do we want to implement?
+      label: Τι θέλουμε να υλοποίησουμε
       placeholder: "As a player, I want to..."
     validations:
       required: true
@@ -13,7 +13,7 @@ body:
   - type: textarea
     id: criteria
     attributes:
-      label: When is it considered complete?
+      label: Τι θεωρείται ολοκληρωμένο
       placeholder: "The feature should..."
     validations:
       required: true
