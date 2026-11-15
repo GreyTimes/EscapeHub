@@ -37,6 +37,12 @@ bin/
 # VS Code
 .vscode/
 
+# Node.js / React / Vite
+
+**/node_modules/
+frontend/dist/
+dist/
+
 # Environment variables and secrets
 .env
 .env.*
