@@ -1,0 +1,10 @@
+package gr.escaphub.mission.definition.repository;
+
+import gr.escaphub.mission.definition.entity.MissionVersion;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.UUID;
+
+@Repository
+public interface MissionVersionRepository extends JpaRepository<MissionVersion, UUID> {
+}
