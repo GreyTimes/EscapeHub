@@ -1,4 +1,4 @@
-package com.escaphub.escapehub.team.entity;
+package com.escapehub.escapehub.Team.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;
