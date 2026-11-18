@@ -8,6 +8,7 @@ The project follows Semantic Versioning.
 
 ### Added
 - Initial development setup.
+- Mission sessions: the player chooses Solo or Team; Solo starts a session directly (#24).
 
 ### Changed
 
