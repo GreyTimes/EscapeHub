@@ -1081,14 +1081,14 @@ gr.escaphub/
 |   |-- controller/
 |   |-- service/
 |   |-- repository/
-|   |-- entity/
+|   |-- gr.escaphub.mission.definition.entity/
 |   |-- dto/
 |
 |-- team/
 |   |-- controller/
 |   |-- service/
 |   |-- repository/
-|   |-- entity/
+|   |-- gr.escaphub.mission.definition.entity/
 |   |-- dto/
 |
 |-- mission/
@@ -1096,7 +1096,7 @@ gr.escaphub/
 |   |   |-- controller/
 |   |   |-- service/
 |   |   |-- repository/
-|   |   |-- entity/
+|   |   |-- gr.escaphub.mission.definition.entity/
 |   |   |-- dto/
 |   |   |-- importer/
 |   |
@@ -1104,14 +1104,14 @@ gr.escaphub/
 |   |   |-- controller/
 |   |   |-- service/
 |   |   |-- repository/
-|   |   |-- entity/
+|   |   |-- gr.escaphub.mission.definition.entity/
 |   |   |-- dto/
 |   |
 |   |-- session/
 |   |   |-- controller/
 |   |   |-- service/
 |   |   |-- repository/
-|   |   |-- entity/
+|   |   |-- gr.escaphub.mission.definition.entity/
 |   |   |-- dto/
 |   |
 |   |-- progression/
@@ -1122,7 +1122,7 @@ gr.escaphub/
 |   |   |-- handler/
 |   |   |-- service/
 |   |   |-- repository/
-|   |   |-- entity/
+|   |   |-- gr.escaphub.mission.definition.entity/
 |   |   |-- dto/
 |   |
 |   |-- evidence/
@@ -1375,7 +1375,7 @@ sequenceDiagram
 
 Προτείνεται:
 
-1. Κάθε External Data Puzzle να βασίζεται σε σταθερά identifiers όπου υπάρχουν (π.χ. Wikidata entity ID ή Open Library ID).
+1. Κάθε External Data Puzzle να βασίζεται σε σταθερά identifiers όπου υπάρχουν (π.χ. Wikidata gr.escaphub.mission.definition.entity ID ή Open Library ID).
 2. Η Mission Version να αποθηκεύει τα αποδεκτά identifiers και τα κρίσιμα normalized δεδομένα που χρησιμοποιούνται στην επικύρωση.
 3. Να διατηρούνται snapshots των σχετικών αποκρίσεων ή normalized records με την έκδοση της αποστολής.
 4. Οι πραγματικές κλήσεις να εξακολουθούν να πραγματοποιούνται ώστε η εξωτερική πηγή να χρησιμοποιείται ουσιαστικά στο παιχνίδι.

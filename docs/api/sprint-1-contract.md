@@ -99,7 +99,7 @@ strategy rather than silently changing existing contracts.
 Use UUIDs when referencing entities owned by other modules.
 
 Avoid unnecessary direct dependencies on another module's
-Java entity classes.
+Java gr.escaphub.mission.definition.entity classes.
 
 Business rules and validation belong to the backend.
 
