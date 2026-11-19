@@ -86,7 +86,7 @@ Backend status: Connected
 
 ## 6. Εκτελέστε τους ελέγχους build και tests
 
-Για το frontend, από τον φάκελο `frontend/`:
+Για το frontend, από τον φάκελο `../../frontend`:
 
 ```powershell
 npm run build
