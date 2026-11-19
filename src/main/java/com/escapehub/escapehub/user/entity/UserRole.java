@@ -1,4 +1,4 @@
-package com.escaphub.escapehub.user.entity;
+package com.escapehub.escapehub.user.entity;
 
 public enum UserRole {
     PLAYER,

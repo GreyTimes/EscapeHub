@@ -1,7 +1,7 @@
-package com.escaphub.escapehub.user.repository;
+package com.escapehub.escapehub.user.repository;
 
-import com.escaphub.escapehub.user.entity.User;
-import com.escaphub.escapehub.user.entity.UserRole;
+import com.escapehub.escapehub.user.entity.User;
+import com.escapehub.escapehub.user.entity.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
