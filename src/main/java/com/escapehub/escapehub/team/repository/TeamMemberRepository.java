@@ -1,7 +1,7 @@
-package com.escapehub.escapehub.Team.repository;
+package com.escapehub.escapehub.team.repository;
 
-import com.escapehub.escapehub.Team.entity.TeamMember;
-import com.escapehub.escapehub.Team.entity.TeamMemberRole;
+import com.escapehub.escapehub.team.entity.TeamMember;
+import com.escapehub.escapehub.team.entity.TeamMemberRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

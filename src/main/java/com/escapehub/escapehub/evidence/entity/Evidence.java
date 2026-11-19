@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
-@Table(name = "evidence", uniqueConstraints = {
+@Table(name = "com/escapehub/escapehub/evidence", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"nodeId", "evidenceKey"})
 })
 public class Evidence {

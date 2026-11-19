@@ -1,6 +1,6 @@
-package gr.escaphub.mission.definition.repository;
+package com.escapehub.escapehub.mission.definition.repository;
 
-import gr.escaphub.mission.definition.entity.Mission;
+import com.escapehub.escapehub.mission.definition.entity.Mission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.UUID;

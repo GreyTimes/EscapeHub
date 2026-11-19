@@ -1,4 +1,4 @@
-package com.escapehub.escapehub.Team.entity;
+package com.escapehub.escapehub.team.entity;
 
 public enum TeamMemberRole {
     LEADER,

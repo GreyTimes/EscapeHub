@@ -1,4 +1,4 @@
-package gr.escaphub.mission.definition.entity;
+package com.escapehub.escapehub.mission.definition.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
