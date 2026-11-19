@@ -104,3 +104,61 @@ Java entity classes.
 Business rules and validation belong to the backend.
 
 The frontend must display the state provided by the backend.
+
+## 8. Mission sessions - Solo / Team choice (#24)
+
+Responsible developer: xaritos222
+
+### 8.1 Start a mission
+
+    POST /api/v1/missions/{missionId}/sessions
+
+Requires a current user (X-Dev-User-Id in the dev profile).
+
+Request body:
+
+    {
+      "mode": "SOLO",
+      "missionVersionId": "<UUID>"
+    }
+
+mode is SOLO or TEAM.
+
+SOLO creates a session directly, without a lobby, with the current
+user as its only member.
+
+TEAM is not started through this endpoint. Team sessions are started
+by the team leader from the team lobby.
+
+Successful response: 201 Created, with header
+Location: /api/v1/sessions/{sessionId}
+
+    {
+      "id": "<UUID>",
+      "missionVersionId": "<UUID>",
+      "mode": "SOLO",
+      "status": "ACTIVE",
+      "teamId": null,
+      "startedByUserId": "<UUID>",
+      "startedAt": "2026-11-18T19:30:00Z"
+    }
+
+Errors (body: {"message": "..."}):
+
+| Status | When |
+|---|---|
+| 400 | mode or missionVersionId missing, mode not SOLO/TEAM, or mode is TEAM |
+| 401 | No current user |
+| 409 | The user already takes part in an ACTIVE session |
+
+### 8.2 View a session
+
+    GET /api/v1/sessions/{sessionId}
+
+Returns the same body as above. Only members of the session may view it.
+
+| Status | When |
+|---|---|
+| 401 | No current user |
+| 403 | The user is not a member of the session |
+| 404 | The session does not exist |

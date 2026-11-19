@@ -26,7 +26,16 @@
 
 ## Sprint 1
 
-(Add new records here.)
+### AI Usage Record - Issue #24 (Solo / Team)
+
+- **Ημερομηνία:** 18/11/2026
+- **Μέλος της ομάδας:** Ευάγγελος Χαραλαμπίδης (xaritos222)
+- **Εργαλείο AI:** Claude (Anthropic)
+- **Σκοπός:** Υλοποίηση του story #24 σύμφωνα με το EscapeHub-architecture.md (ενότητες 4.7, 5.1, 6.2, 6.3, 8.3).
+- **Τι πρότεινε το AI;** Το package mission/session (MissionSession, SessionMember, enums, repositories, MissionSessionService, controller, χειρισμό σφαλμάτων), JUnit tests, το component PlayModeSelector και το sessionApi.js στο frontend.
+- **Τι αποδεχτήκαμε;** Solo εκκίνηση χωρίς lobby, έλεγχο ότι ο χρήστης δεν έχει ήδη ενεργή αποστολή, αναφορές σε άλλα modules μόνο με UUID.
+- **Τι απορρίψαμε ή τροποποιήσαμε;** Η ομαδική εκκίνηση δεν υλοποιείται σε αυτό το endpoint, γιατί κατά την αρχιτεκτονική γίνεται από το lobby του αρχηγού.
+- **Πώς επαληθεύσαμε το αποτέλεσμα;** Εκτέλεση `gradlew test` και `npm run build`, χειροκίνητη δοκιμή της επιλογής Solo/Team στον browser.
 
 ---
 
