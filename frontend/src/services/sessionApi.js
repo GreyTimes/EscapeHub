@@ -17,3 +17,10 @@ export function startSession(missionId, missionVersionId, mode) {
 export function getSession(sessionId) {
     return apiRequest(`/sessions/${sessionId}`);
 }
+
+// POST /api/v1/sessions/{sessionId}/abandon
+export function abandonSession(sessionId) {
+    return apiRequest(`/sessions/${sessionId}/abandon`, {
+        method: 'POST'
+    });
+}

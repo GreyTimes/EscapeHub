@@ -55,4 +55,14 @@ public class MissionSessionController {
                 sessionService.getSessionForUser(sessionId, currentUserId)
         );
     }
+    @PostMapping("/sessions/{sessionId}/abandon")
+    public SessionResponse abandonSession(
+            @PathVariable UUID sessionId,
+            @RequestAttribute(name = DevelopmentCurrentUserFilter.CURRENT_USER_ID_ATTRIBUTE, required = false)
+            UUID currentUserId
+    ) {
+        return SessionResponse.from(
+                sessionService.abandonSession(sessionId, currentUserId)
+        );
+    }
 }

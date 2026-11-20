@@ -4,17 +4,24 @@ import { apiRequest } from './services/api';
 
 import PlayModeSelector from './features/mission-session/PlayModeSelector';
 
+import LobbyPage from './features/lobby/LobbyPage';
+import ActiveSession from './features/session/ActiveSession';
+
 // Development-only mission used to try the Solo / Team choice
 // until the mission catalogue (#21) is connected.
 const DEV_MISSION_ID = import.meta.env.VITE_DEV_MISSION_ID;
 
 const DEV_MISSION_VERSION_ID = import.meta.env.VITE_DEV_MISSION_VERSION_ID;
 
+const DEV_USER_ID = import.meta.env.VITE_DEV_USER_ID;
+
 function App() {
 
     const [backendStatus, setBackendStatus] = useState('Checking...');
 
     const [startedSession, setStartedSession] = useState(null);
+
+    const [inLobby, setInLobby] = useState(false);
 
     useEffect(() => {
 
@@ -65,20 +72,31 @@ function App() {
             </section>
 
             {startedSession ? (
-                <section>
-                    <h2>Mission started</h2>
-
-                    <p>
-                        Session {startedSession.id} ({startedSession.mode}, {startedSession.status})
-                    </p>
-                </section>
-            ) : (
-                <PlayModeSelector
-                    missionId={DEV_MISSION_ID}
-                    missionVersionId={DEV_MISSION_VERSION_ID}
-                    onSoloStarted={setStartedSession}
-                />
-            )}
+                         <ActiveSession
+                             session={startedSession}
+                             onSessionAbandoned={() => {
+                                 setStartedSession(null);
+                                 setInLobby(false);
+                             }}
+                         />
+                     ) : inLobby ? (
+                         <LobbyPage
+                             missionVersionId={DEV_MISSION_VERSION_ID}
+                             currentUserId={DEV_USER_ID}
+                             onSessionStarted={(session) => {
+                                 setStartedSession(session);
+                                 setInLobby(false);
+                             }}
+                             onBack={() => setInLobby(false)}
+                         />
+                     ) : (
+                         <PlayModeSelector
+                             missionId={DEV_MISSION_ID}
+                             missionVersionId={DEV_MISSION_VERSION_ID}
+                             onSoloStarted={setStartedSession}
+                             onTeamSelected={() => setInLobby(true)}
+                         />
+                     )}
         </main>
     );
 }
