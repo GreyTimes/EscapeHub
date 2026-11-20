@@ -7,6 +7,9 @@ import com.escapehub.escapehub.mission.session.entity.SessionMember;
 import com.escapehub.escapehub.mission.session.entity.SessionMode;
 import com.escapehub.escapehub.mission.session.repository.MissionSessionRepository;
 import com.escapehub.escapehub.mission.session.repository.SessionMemberRepository;
+import com.escapehub.escapehub.mission.map.entity.MissionNode;
+import com.escapehub.escapehub.mission.map.repository.MissionNodeRepository;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +33,9 @@ class MissionSessionServiceTest {
     @Mock
     private SessionMemberRepository memberRepository;
 
+    @Mock
+    private MissionNodeRepository missionNodeRepository;
+
     private MissionSessionService service;
 
     private final UUID userId = UUID.randomUUID();
@@ -37,7 +43,7 @@ class MissionSessionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new MissionSessionService(sessionRepository, memberRepository);
+        service = new MissionSessionService(sessionRepository, memberRepository,missionNodeRepository);
     }
 
     @Test
@@ -165,5 +171,125 @@ class MissionSessionServiceTest {
         assertDoesNotThrow(
                 () -> new MissionSession(missionVersionId, SessionMode.TEAM, teamId, userId)
         );
+    }
+    @Test
+    void soloStartPlacesMemberAtStartingNode() {
+        UUID startingNodeId = UUID.randomUUID();
+        MissionNode startNode = new MissionNode();
+        startNode.setId(startingNodeId);
+        startNode.setStartingNode(true);
+
+        when(memberRepository.existsByUserIdAndSessionStatus(userId, MissionSessionStatus.ACTIVE))
+                .thenReturn(false);
+        when(sessionRepository.save(any(MissionSession.class))).thenAnswer(invocation -> {
+            MissionSession saved = invocation.getArgument(0);
+            saved.setId(UUID.randomUUID());
+            return saved;
+        });
+        when(missionNodeRepository.findByMissionVersionId(missionVersionId))
+                .thenReturn(List.of(startNode));
+
+        service.startSession(SessionMode.SOLO, missionVersionId, userId);
+
+        ArgumentCaptor<SessionMember> memberCaptor = ArgumentCaptor.forClass(SessionMember.class);
+        verify(memberRepository).save(memberCaptor.capture());
+        assertEquals(startingNodeId, memberCaptor.getValue().getCurrentNodeId());
+    }
+
+    @Test
+    void teamStartCreatesSessionAndPlacesAllMembersAtStartingNode() {
+        UUID teamId = UUID.randomUUID();
+        UUID lobbyId = UUID.randomUUID();
+        UUID secondUserId = UUID.randomUUID();
+        UUID startingNodeId = UUID.randomUUID();
+
+        MissionNode startNode = new MissionNode();
+        startNode.setId(startingNodeId);
+        startNode.setStartingNode(true);
+
+        when(sessionRepository.existsByTeamIdAndStatus(teamId, MissionSessionStatus.ACTIVE))
+                .thenReturn(false);
+        when(memberRepository.existsByUserIdAndSessionStatus(any(), eq(MissionSessionStatus.ACTIVE)))
+                .thenReturn(false);
+        when(sessionRepository.save(any(MissionSession.class))).thenAnswer(invocation -> {
+            MissionSession saved = invocation.getArgument(0);
+            saved.setId(UUID.randomUUID());
+            return saved;
+        });
+        when(missionNodeRepository.findByMissionVersionId(missionVersionId))
+                .thenReturn(List.of(startNode));
+
+        MissionSession session = service.startTeamSession(
+                missionVersionId,
+                teamId,
+                lobbyId,
+                userId,
+                List.of(userId, secondUserId)
+        );
+
+        assertEquals(SessionMode.TEAM, session.getMode());
+        assertEquals(teamId, session.getTeamId());
+        assertEquals(lobbyId, session.getLobbyId());
+
+        ArgumentCaptor<SessionMember> memberCaptor = ArgumentCaptor.forClass(SessionMember.class);
+        verify(memberRepository, times(2)).save(memberCaptor.capture());
+        assertTrue(memberCaptor.getAllValues().stream()
+                .allMatch(member -> startingNodeId.equals(member.getCurrentNodeId())));
+    }
+
+    @Test
+    void ownerCanAbandonActiveSession() {
+        UUID sessionId = UUID.randomUUID();
+        MissionSession session = new MissionSession(missionVersionId, SessionMode.SOLO, null, userId);
+        session.setId(sessionId);
+
+        SessionMember member = new SessionMember(sessionId, userId);
+
+        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(memberRepository.findBySessionId(sessionId)).thenReturn(List.of(member));
+
+        MissionSession abandoned = service.abandonSession(sessionId, userId);
+
+        assertEquals(MissionSessionStatus.ABANDONED, abandoned.getStatus());
+        assertNotNull(abandoned.getAbandonedAt());
+        assertEquals(ParticipationStatus.FINISHED, member.getParticipationStatus());
+        verify(sessionRepository).save(session);
+        verify(memberRepository).saveAll(List.of(member));
+    }
+
+    @Test
+    void nonOwnerCannotAbandonSession() {
+        UUID sessionId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+        MissionSession session = new MissionSession(missionVersionId, SessionMode.SOLO, null, userId);
+        session.setId(sessionId);
+
+        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+
+        SessionException exception = assertThrows(
+                SessionException.class,
+                () -> service.abandonSession(sessionId, otherUserId)
+        );
+
+        assertEquals(SessionException.Reason.FORBIDDEN_ACTION, exception.getReason());
+        verify(sessionRepository, never()).save(any());
+    }
+
+    @Test
+    void inactiveSessionCannotBeAbandoned() {
+        UUID sessionId = UUID.randomUUID();
+        MissionSession session = new MissionSession(missionVersionId, SessionMode.SOLO, null, userId);
+        session.setId(sessionId);
+        session.setStatus(MissionSessionStatus.ABANDONED);
+
+        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+
+        SessionException exception = assertThrows(
+                SessionException.class,
+                () -> service.abandonSession(sessionId, userId)
+        );
+
+        assertEquals(SessionException.Reason.SESSION_NOT_ACTIVE, exception.getReason());
+        verify(sessionRepository, never()).save(any());
     }
 }

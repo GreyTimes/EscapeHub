@@ -5,6 +5,7 @@ import com.escapehub.escapehub.mission.session.entity.MissionSession;
 import com.escapehub.escapehub.mission.session.entity.SessionMode;
 import com.escapehub.escapehub.mission.session.service.MissionSessionService;
 import com.escapehub.escapehub.mission.session.service.SessionException;
+import com.escapehub.escapehub.mission.session.entity.MissionSessionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -144,5 +145,35 @@ class MissionSessionControllerTest {
         mockMvc.perform(get("/api/v1/sessions/{sessionId}", sessionId)
                         .requestAttr(USER_ATTRIBUTE, userId))
                 .andExpect(status().isForbidden());
+    }
+    @Test
+    void abandonSessionReturnsAbandonedStatus() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        MissionSession session = new MissionSession(missionVersionId, SessionMode.SOLO, null, userId);
+        session.setId(sessionId);
+        session.setStatus(MissionSessionStatus.ABANDONED);
+
+        when(sessionService.abandonSession(sessionId, userId)).thenReturn(session);
+
+        mockMvc.perform(post("/api/v1/sessions/{sessionId}/abandon", sessionId)
+                        .requestAttr(USER_ATTRIBUTE, userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(sessionId.toString()))
+                .andExpect(jsonPath("$.status").value("ABANDONED"));
+    }
+
+    @Test
+    void nonOwnerAbandonReturnsForbidden() throws Exception {
+        UUID sessionId = UUID.randomUUID();
+        when(sessionService.abandonSession(sessionId, userId))
+                .thenThrow(new SessionException(
+                        SessionException.Reason.FORBIDDEN_ACTION,
+                        "Only the session owner or team leader can abandon this session."
+                ));
+
+        mockMvc.perform(post("/api/v1/sessions/{sessionId}/abandon", sessionId)
+                        .requestAttr(USER_ATTRIBUTE, userId))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").exists());
     }
 }

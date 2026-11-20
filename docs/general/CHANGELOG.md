@@ -22,3 +22,6 @@ The project follows Semantic Versioning.
 - Initial project structure.
 - GitHub Actions CI workflow.
 - JUnit testing setup.
+
+### Added
+- Team Lobby creation, join, mission start (2–6 participants) and active session abandonment (#36).
