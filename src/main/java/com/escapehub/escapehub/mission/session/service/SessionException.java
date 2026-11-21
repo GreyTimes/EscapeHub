@@ -20,7 +20,9 @@ public class SessionException extends RuntimeException {
         ACTIVE_LOBBY_EXISTS,
         ALREADY_IN_LOBBY,
         LOBBY_FULL,
-        NOT_ENOUGH_PARTICIPANTS
+        NOT_ENOUGH_PARTICIPANTS,
+        NODE_NOT_FOUND,
+        NODE_NOT_CONNECTED
     }
 
     private final Reason reason;

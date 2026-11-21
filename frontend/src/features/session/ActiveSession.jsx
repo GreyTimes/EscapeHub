@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { abandonSession } from '../../services/sessionApi';
+import InvestigationMap from '../exploration/InvestigationMap';
 
 function ActiveSession({ session, onSessionAbandoned }) {
     const [loading, setLoading] = useState(false);
@@ -46,6 +47,9 @@ function ActiveSession({ session, onSessionAbandoned }) {
                     {error}
                 </p>
             )}
+        {session.status === 'ACTIVE' && (
+                     <InvestigationMap sessionId={session.id} />
+                 )}
         </section>
     );
 }

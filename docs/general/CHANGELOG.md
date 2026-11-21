@@ -24,4 +24,5 @@ The project follows Semantic Versioning.
 - JUnit testing setup.
 
 ### Added
-- Team Lobby creation, join, mission start (2–6 participants) and active session abandonment (#36).
+- Team Lobby creation, join, mission start (2–6 participants) and active session abandonment.
+- Investigation Map display and player movement between connected rooms.

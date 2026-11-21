@@ -2,6 +2,7 @@ package com.escapehub.escapehub.mission.session.controller;
 
 import com.escapehub.escapehub.mission.session.service.SessionException;
 import com.escapehub.escapehub.mission.lobby.controller.LobbyController;
+import com.escapehub.escapehub.mission.map.controller.MissionMapController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -18,7 +19,7 @@ import java.util.Map;
  *
  * Limited to this module so it does not affect other controllers.
  */
-@RestControllerAdvice(basePackageClasses = {MissionSessionController.class,LobbyController.class})
+@RestControllerAdvice(basePackageClasses = {MissionSessionController.class,LobbyController.class,MissionMapController.class})
 public class SessionExceptionHandler {
 
     @ExceptionHandler(SessionException.class)
@@ -38,6 +39,8 @@ public class SessionExceptionHandler {
             case ACTIVE_LOBBY_EXISTS -> HttpStatus.CONFLICT;
             case ALREADY_IN_LOBBY -> HttpStatus.CONFLICT;
             case LOBBY_FULL -> HttpStatus.CONFLICT;
+            case NODE_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case NODE_NOT_CONNECTED -> HttpStatus.BAD_REQUEST;
         };
 
         return error(status, exception.getMessage());
