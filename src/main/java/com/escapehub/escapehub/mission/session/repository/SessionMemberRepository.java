@@ -9,11 +9,13 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 @Repository
 public interface SessionMemberRepository extends JpaRepository<SessionMember, UUID> {
 
     List<SessionMember> findBySessionId(UUID sessionId);
+    Optional<SessionMember> findBySessionIdAndUserId(UUID sessionId, UUID userId);
 
     boolean existsBySessionIdAndUserId(UUID sessionId, UUID userId);
 
