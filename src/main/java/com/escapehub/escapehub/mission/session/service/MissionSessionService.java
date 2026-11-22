@@ -16,17 +16,8 @@ import java.util.List;
 
 import java.util.UUID;
 
-/**
- * Starts mission sessions based on the mode the player chose.
- *
- * SOLO: a session with one member is created directly, without a lobby.
- * TEAM: team sessions are created only from a team lobby
- *       (LobbyService.startMission, architecture section 10.4),
- *       so this service rejects TEAM requests with a clear message.
- */
 @Service
 public class MissionSessionService {
-
     private final MissionSessionRepository sessionRepository;
     private final SessionMemberRepository memberRepository;
     private final MissionNodeRepository missionNodeRepository;
@@ -56,7 +47,6 @@ public class MissionSessionService {
     }
 
     private MissionSession startSoloSession(UUID missionVersionId, UUID userId) {
-        // A user cannot take part in two active missions at the same time.
         if (memberRepository.existsByUserIdAndSessionStatus(userId, MissionSessionStatus.ACTIVE)) {
             throw new SessionException(
                     SessionException.Reason.ACTIVE_SESSION_EXISTS,
@@ -86,7 +76,6 @@ public class MissionSessionService {
                         "Session not found."
                 ));
 
-        // Only players of the session may see it.
         if (!memberRepository.existsBySessionIdAndUserId(sessionId, userId)) {
             throw new SessionException(
                     SessionException.Reason.NOT_A_SESSION_MEMBER,
@@ -166,6 +155,28 @@ public class MissionSessionService {
         sessionRepository.save(session);
 
         List<SessionMember> members = memberRepository.findBySessionId(sessionId);
+        for (SessionMember member : members) {
+            member.setParticipationStatus(ParticipationStatus.FINISHED);
+        }
+        memberRepository.saveAll(members);
+
+        return session;
+    }
+
+    @Transactional
+    public MissionSession completeSession(MissionSession session) {
+        if (!session.isActive()) {
+            throw new SessionException(
+                    SessionException.Reason.SESSION_NOT_ACTIVE,
+                    "Only an active session can be completed."
+            );
+        }
+
+        session.setStatus(MissionSessionStatus.COMPLETED);
+        session.setCompletedAt(Instant.now());
+        sessionRepository.save(session);
+
+        List<SessionMember> members = memberRepository.findBySessionId(session.getId());
         for (SessionMember member : members) {
             member.setParticipationStatus(ParticipationStatus.FINISHED);
         }

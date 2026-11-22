@@ -15,18 +15,12 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1")
 public class MissionSessionController {
-
     private final MissionSessionService sessionService;
 
     public MissionSessionController(MissionSessionService sessionService) {
         this.sessionService = sessionService;
     }
 
-    /**
-     * The player chooses how to play a mission.
-     * SOLO starts a session immediately (201 Created).
-     * TEAM is rejected here, because team sessions start from the team lobby.
-     */
     @PostMapping("/missions/{missionId}/sessions")
     public ResponseEntity<SessionResponse> startSession(
             @PathVariable UUID missionId,

@@ -4,12 +4,6 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * One run of a specific mission version, played SOLO or as a TEAM.
- *
- * Other modules (mission version, team, user, lobby) are referenced
- * only by UUID, as agreed in the Sprint 1 API contract.
- */
 @Entity
 @Table(
         name = "mission_sessions",
@@ -18,7 +12,6 @@ import java.util.UUID;
         }
 )
 public class MissionSession {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", updatable = false, nullable = false)
@@ -27,7 +20,6 @@ public class MissionSession {
     @Column(name = "mission_version_id", nullable = false, updatable = false)
     private UUID missionVersionId;
 
-    // Only filled for TEAM sessions that were started from a lobby.
     @Column(name = "lobby_id")
     private UUID lobbyId;
 
@@ -35,7 +27,6 @@ public class MissionSession {
     @Column(name = "mode", nullable = false, updatable = false, length = 10)
     private SessionMode mode;
 
-    // Null in SOLO mode, required in TEAM mode.
     @Column(name = "team_id", updatable = false)
     private UUID teamId;
 

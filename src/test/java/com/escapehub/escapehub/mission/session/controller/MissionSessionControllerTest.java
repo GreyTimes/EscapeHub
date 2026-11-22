@@ -22,7 +22,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
 class MissionSessionControllerTest {
-
     private static final String USER_ATTRIBUTE = DevelopmentCurrentUserFilter.CURRENT_USER_ID_ATTRIBUTE;
 
     private MissionSessionService sessionService;

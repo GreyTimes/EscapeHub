@@ -4,10 +4,6 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 
-/**
- * A player taking part in a mission session.
- * A SOLO session has exactly one member.
- */
 @Entity
 @Table(
         name = "session_members",
@@ -16,7 +12,6 @@ import java.util.UUID;
         }
 )
 public class SessionMember {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", updatable = false, nullable = false)
@@ -28,7 +23,6 @@ public class SessionMember {
     @Column(name = "user_id", nullable = false, updatable = false)
     private UUID userId;
 
-    // Personal position on the investigation map. Set when the player enters a node.
     @Column(name = "current_node_id")
     private UUID currentNodeId;
 
