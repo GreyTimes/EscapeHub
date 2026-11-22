@@ -1,11 +1,6 @@
 package com.escapehub.escapehub.mission.session.service;
 
-/**
- * Business-rule errors of the mission session module.
- * The controller layer maps each Reason to an HTTP status.
- */
 public class SessionException extends RuntimeException {
-
     public enum Reason {
         MISSING_CURRENT_USER,
         ACTIVE_SESSION_EXISTS,
@@ -22,7 +17,9 @@ public class SessionException extends RuntimeException {
         LOBBY_FULL,
         NOT_ENOUGH_PARTICIPANTS,
         NODE_NOT_FOUND,
-        NODE_NOT_CONNECTED
+        NODE_NOT_CONNECTED,
+        PUZZLE_NOT_FOUND,
+        NOT_IN_PUZZLE_ROOM
     }
 
     private final Reason reason;

@@ -107,8 +107,6 @@ The frontend must display the state provided by the backend.
 
 ## 8. Mission sessions - Solo / Team choice (#24)
 
-Responsible developer: xaritos222
-
 ### 8.1 Start a mission
 
     POST /api/v1/missions/{missionId}/sessions

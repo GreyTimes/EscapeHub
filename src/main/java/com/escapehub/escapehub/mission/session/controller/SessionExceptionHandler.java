@@ -3,6 +3,7 @@ package com.escapehub.escapehub.mission.session.controller;
 import com.escapehub.escapehub.mission.session.service.SessionException;
 import com.escapehub.escapehub.mission.lobby.controller.LobbyController;
 import com.escapehub.escapehub.mission.map.controller.MissionMapController;
+import com.escapehub.escapehub.puzzle.controller.PuzzleController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -13,15 +14,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.util.Map;
 
-/**
- * Turns session errors into JSON responses of the form {"message": "..."},
- * which frontend/src/services/api.js already knows how to read.
- *
- * Limited to this module so it does not affect other controllers.
- */
-@RestControllerAdvice(basePackageClasses = {MissionSessionController.class,LobbyController.class,MissionMapController.class})
+@RestControllerAdvice(basePackageClasses = {MissionSessionController.class,LobbyController.class,MissionMapController.class,PuzzleController.class})
 public class SessionExceptionHandler {
-
     @ExceptionHandler(SessionException.class)
     public ResponseEntity<Map<String, String>> handleSessionException(SessionException exception) {
         HttpStatus status = switch (exception.getReason()) {
@@ -41,6 +35,8 @@ public class SessionExceptionHandler {
             case LOBBY_FULL -> HttpStatus.CONFLICT;
             case NODE_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case NODE_NOT_CONNECTED -> HttpStatus.BAD_REQUEST;
+            case PUZZLE_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case NOT_IN_PUZZLE_ROOM -> HttpStatus.FORBIDDEN;
         };
 
         return error(status, exception.getMessage());
@@ -56,13 +52,11 @@ public class SessionExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, message);
     }
 
-    // Missing body, broken JSON or a mode other than SOLO / TEAM.
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, String>> handleUnreadableBody(HttpMessageNotReadableException exception) {
-        return error(HttpStatus.BAD_REQUEST, "Invalid request body. mode must be SOLO or TEAM.");
+        return error(HttpStatus.BAD_REQUEST, "Invalid request body.");
     }
 
-    // An id in the URL that is not a valid UUID.
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, String>> handleTypeMismatch(MethodArgumentTypeMismatchException exception) {
         return error(HttpStatus.BAD_REQUEST, exception.getName() + " must be a valid UUID.");

@@ -26,7 +26,6 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MissionSessionServiceTest {
-
     @Mock
     private MissionSessionRepository sessionRepository;
 
@@ -287,6 +286,39 @@ class MissionSessionServiceTest {
         SessionException exception = assertThrows(
                 SessionException.class,
                 () -> service.abandonSession(sessionId, userId)
+        );
+
+        assertEquals(SessionException.Reason.SESSION_NOT_ACTIVE, exception.getReason());
+        verify(sessionRepository, never()).save(any());
+    }
+
+    @Test
+    void completeSessionMarksSessionCompletedAndMembersFinished() {
+        UUID sessionId = UUID.randomUUID();
+        MissionSession session = new MissionSession(missionVersionId, SessionMode.SOLO, null, userId);
+        session.setId(sessionId);
+        SessionMember member = new SessionMember(sessionId, userId);
+
+        when(memberRepository.findBySessionId(sessionId)).thenReturn(List.of(member));
+
+        service.completeSession(session);
+
+        assertEquals(MissionSessionStatus.COMPLETED, session.getStatus());
+        assertNotNull(session.getCompletedAt());
+        assertEquals(ParticipationStatus.FINISHED, member.getParticipationStatus());
+        verify(sessionRepository).save(session);
+        verify(memberRepository).saveAll(List.of(member));
+    }
+
+    @Test
+    void inactiveSessionCannotBeCompleted() {
+        MissionSession session = new MissionSession(missionVersionId, SessionMode.SOLO, null, userId);
+        session.setId(UUID.randomUUID());
+        session.setStatus(MissionSessionStatus.ABANDONED);
+
+        SessionException exception = assertThrows(
+                SessionException.class,
+                () -> service.completeSession(session)
         );
 
         assertEquals(SessionException.Reason.SESSION_NOT_ACTIVE, exception.getReason());

@@ -13,16 +13,11 @@ import java.util.Optional;
 
 @Repository
 public interface SessionMemberRepository extends JpaRepository<SessionMember, UUID> {
-
     List<SessionMember> findBySessionId(UUID sessionId);
     Optional<SessionMember> findBySessionIdAndUserId(UUID sessionId, UUID userId);
 
     boolean existsBySessionIdAndUserId(UUID sessionId, UUID userId);
 
-    /**
-     * True if the user is a member of a session with the given status.
-     * A member who LEFT still counts, because they can return to the session.
-     */
     @Query("""
             select case when count(m) > 0 then true else false end
             from SessionMember m, MissionSession s
