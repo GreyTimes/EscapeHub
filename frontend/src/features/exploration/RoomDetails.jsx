@@ -1,11 +1,15 @@
+import RoomPuzzles from '../puzzle/RoomPuzzles';
+import AvailableEvidence from '../evidence/AvailableEvidence';
+
 function RoomDetails({
-    room,
-    isCurrent,
-    isConnected,
-    availableMoves,
-    moving,
-    onMove
-}) {
+                         sessionId,
+                         room,
+                         isCurrent,
+                         isConnected,
+                         availableMoves,
+                         moving,
+                         onMove
+                     }) {
     if (!room) {
         return <p>Select a room on the map to view its details.</p>;
     }
@@ -25,7 +29,10 @@ function RoomDetails({
                 {isCurrent ? ' (You are here)' : ''}
             </h4>
 
-            <p>{room.description || 'No description available for this room.'}</p>
+            <p>
+                {room.description ||
+                    'No description available for this room.'}
+            </p>
 
             <p>
                 <small>
@@ -41,25 +48,36 @@ function RoomDetails({
                             onClick={() => onMove(room.id)}
                             disabled={moving}
                         >
-                            {moving ? 'Moving...' : `Move to ${room.title}`}
+                            {moving
+                                ? 'Moving...'
+                                : `Move to ${room.title}`}
                         </button>
                     ) : (
                         <p>
-                            <em>Not directly connected to your current room.</em>
+                            <em>
+                                Not directly connected to your current room.
+                            </em>
                         </p>
                     )}
                 </div>
             )}
 
             <div style={{ marginTop: '12px' }}>
-                <strong>Available moves from your current room:</strong>
+                <strong>
+                    Available moves from your current room:
+                </strong>
+
                 {availableMoves.length === 0 ? (
                     <p>No connected rooms available.</p>
                 ) : (
                     <ul>
                         {availableMoves.map((targetRoom) => (
-                            <li key={targetRoom.id} style={{ marginBottom: '4px' }}>
+                            <li
+                                key={targetRoom.id}
+                                style={{ marginBottom: '4px' }}
+                            >
                                 {targetRoom.title}{' '}
+
                                 <button
                                     type="button"
                                     onClick={() => onMove(targetRoom.id)}
@@ -72,6 +90,20 @@ function RoomDetails({
                     </ul>
                 )}
             </div>
+
+            {isCurrent && (
+                <>
+                    <AvailableEvidence
+                        sessionId={sessionId}
+                        roomId={room.id}
+                    />
+
+                    <RoomPuzzles
+                        sessionId={sessionId}
+                        roomId={room.id}
+                    />
+                </>
+            )}
         </div>
     );
 }

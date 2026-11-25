@@ -1,29 +1,32 @@
-
 import { useEffect, useState } from 'react';
 
 import { apiRequest } from './services/api';
+import { getActiveSession } from './services/sessionApi';
+
 import TeamsPage from './features/teams/TeamsPage.jsx';
 import MissionCatalogue from './features/mission-catalogue/MissionCatalogue';
 import PlayModeSelector from './features/mission-session/PlayModeSelector';
-import LobbyPage from './features/lobby/LobbyPage';
 import ActiveSession from './features/session/ActiveSession';
 
 const DEV_USER_ID = import.meta.env.VITE_DEV_USER_ID;
 
 function App() {
-
     const [backendStatus, setBackendStatus] = useState('Checking...');
+
     const [selectedMission, setSelectedMission] = useState(null);
     const [startedSession, setStartedSession] = useState(null);
-    const [inLobby, setInLobby] = useState(false);
-    const [showTeams, setShowTeams] = useState(false);
+
+    const [inTeamSetup, setInTeamSetup] = useState(false);
+
+    const [recoverableSession, setRecoverableSession] = useState(null);
+    const [recoveryStatus, setRecoveryStatus] = useState('checking');
+    const [recoveryError, setRecoveryError] = useState('');
+    const [recoveryAttempt, setRecoveryAttempt] = useState(0);
 
     useEffect(() => {
-
         let cancelled = false;
 
         async function checkBackend() {
-
             try {
                 const response = await apiRequest('/health');
 
@@ -34,9 +37,7 @@ function App() {
                             : 'Unexpected response'
                     );
                 }
-
             } catch (error) {
-
                 if (!cancelled) {
                     setBackendStatus(`Unavailable: ${error.message}`);
                 }
@@ -48,8 +49,52 @@ function App() {
         return () => {
             cancelled = true;
         };
-
     }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function checkActiveSession() {
+            setRecoveryStatus('checking');
+            setRecoveryError('');
+
+            try {
+                const session = await getActiveSession();
+
+                if (cancelled) {
+                    return;
+                }
+
+                setRecoverableSession(session);
+                setRecoveryStatus(session ? 'available' : 'none');
+            } catch (error) {
+                if (!cancelled) {
+                    setRecoverableSession(null);
+                    setRecoveryError(error.message);
+                    setRecoveryStatus('error');
+                }
+            }
+        }
+
+        checkActiveSession();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [recoveryAttempt]);
+
+    function handleSessionAbandoned() {
+        setStartedSession(null);
+        setRecoverableSession(null);
+        setRecoveryStatus('none');
+        setInTeamSetup(false);
+        setSelectedMission(null);
+    }
+
+    function handleContinueMission() {
+        setStartedSession(recoverableSession);
+        setRecoverableSession(null);
+    }
 
     return (
         <main>
@@ -59,48 +104,83 @@ function App() {
 
             <section>
                 <h2>Development Environment</h2>
-
-                <button
-                    type="button"
-                    onClick={() => setShowTeams(!showTeams)}
-                >
-                    {showTeams ? 'Back to Missions' : 'Team Management'}
-                </button>
-
-                <p>
-                    Backend status: {backendStatus}
-                </p>
+                <p>Backend status: {backendStatus}</p>
             </section>
 
-            {showTeams ? (
-                <TeamsPage />
-            ) : startedSession ? (
+            {startedSession ? (
                 <ActiveSession
                     session={startedSession}
-                    onSessionAbandoned={() => {
-                        setStartedSession(null);
-                        setInLobby(false);
-                        setSelectedMission(null);
-                    }}
+                    onSessionAbandoned={handleSessionAbandoned}
                 />
+            ) : recoveryStatus === 'checking' ? (
+                <section>
+                    <h2>Checking for an active mission...</h2>
+                    <p>
+                        Please wait while EscapeHub checks your saved progress.
+                    </p>
+                </section>
+            ) : recoveryStatus === 'error' ? (
+                <section>
+                    <h2>Unable to check your active mission</h2>
+
+                    <p>{recoveryError}</p>
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setRecoveryAttempt((attempt) => attempt + 1)
+                        }
+                    >
+                        Retry
+                    </button>
+                </section>
+            ) : recoverableSession ? (
+                <section>
+                    <h2>Active Mission Found</h2>
+
+                    <p>You already have an active mission saved.</p>
+
+                    <p>
+                        Mode: <strong>{recoverableSession.mode}</strong>
+                    </p>
+
+                    <p>
+                        Started:{' '}
+                        <strong>
+                            {recoverableSession.startedAt
+                                ? new Date(
+                                    recoverableSession.startedAt
+                                ).toLocaleString()
+                                : 'Unknown'}
+                        </strong>
+                    </p>
+
+                    <button
+                        type="button"
+                        onClick={handleContinueMission}
+                    >
+                        Continue Mission
+                    </button>
+                </section>
             ) : !selectedMission ? (
                 <MissionCatalogue
-                    onSelectMission={(mission) => setSelectedMission(mission)}
+                    onSelectMission={setSelectedMission}
                 />
-            ) : inLobby ? (
-                <LobbyPage
+            ) : inTeamSetup ? (
+                <TeamsPage
                     missionVersionId={selectedMission.missionVersionId}
                     currentUserId={DEV_USER_ID}
                     onSessionStarted={(session) => {
                         setStartedSession(session);
-                        setInLobby(false);
+                        setInTeamSetup(false);
                     }}
-                    onBack={() => setInLobby(false)}
+                    onBack={() => setInTeamSetup(false)}
                 />
             ) : (
                 <div>
                     <p>
-                        Selected mission: <strong>{selectedMission.title}</strong>
+                        Selected mission:{' '}
+                        <strong>{selectedMission.title}</strong>
                     </p>
 
                     <button
@@ -114,7 +194,7 @@ function App() {
                         missionId={selectedMission.missionId}
                         missionVersionId={selectedMission.missionVersionId}
                         onSoloStarted={setStartedSession}
-                        onTeamSelected={() => setInLobby(true)}
+                        onTeamSelected={() => setInTeamSetup(true)}
                     />
                 </div>
             )}

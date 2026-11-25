@@ -8,6 +8,11 @@ export function createLobby(teamId, missionVersionId) {
     });
 }
 
+// GET /api/v1/teams/{teamId}/lobbies/waiting
+export function getWaitingLobbyForTeam(teamId) {
+    return apiRequest(`/teams/${teamId}/lobbies/waiting`);
+}
+
 // GET /api/v1/lobbies/{lobbyId}
 export function getLobby(lobbyId) {
     return apiRequest(`/lobbies/${lobbyId}`);

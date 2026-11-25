@@ -47,6 +47,19 @@ public class LobbyController {
         return lobbyService.getLobby(lobbyId, currentUserId);
     }
 
+    @GetMapping("/teams/{teamId}/lobbies/waiting")
+    public LobbyResponse getWaitingLobbyForTeam(
+            @PathVariable UUID teamId,
+            @RequestAttribute(
+                    name = DevelopmentCurrentUserFilter.CURRENT_USER_ID_ATTRIBUTE,
+                    required = false
+            ) UUID currentUserId
+    ) {
+        return lobbyService.getWaitingLobbyForTeam(
+                teamId, currentUserId
+        );
+    }
+
     @PostMapping("/lobbies/{lobbyId}/join")
     public LobbyResponse joinLobby(
             @PathVariable UUID lobbyId,

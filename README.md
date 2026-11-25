@@ -1,84 +1,43 @@
-
 # EscapeHub
 
-**Collaborative Mystery Missions Platform Using Open Data**
+Collaborative Mystery Missions Platform Using Open Data
 
-EscapeHub is a web application where users participate individually
-or in teams in interactive mystery missions.
-
-Players investigate evidence, solve puzzles, explore multiple paths
-and collaborate to uncover the truth.
+EscapeHub is a web application where players investigate interactive mystery missions, explore connected rooms, discover evidence, solve puzzles and collaborate with other players.
 
 ## Technology Stack
 
+### Backend
 - Java 25
-- Spring Boot
+- Spring Boot 4.1.2
 - Gradle
-- Spring Web
+- Spring Web MVC
+- Spring Data JPA
+- PostgreSQL 17
 - JUnit 5
-- PostgreSQL (planned)
-- Docker (planned)
+
+### Frontend
+- React
+- JavaScript
+- Vite
+
+### Development and CI
+- Docker Compose
+- GitHub Actions
 
 ## Requirements
 
-- JDK 25
+Install the following before running the project:
+
 - Git
+- JDK 25
+- Node.js 20.19+ or 22.12+
+- npm
+- Docker Desktop with Docker Compose
 
-## Running the Application
+## Initial Setup
 
-Windows:
+Clone the repository:
 
-    .\gradlew.bat bootRun
-
-Linux/macOS:
-
-    ./gradlew bootRun
-
-## Running Tests
-
-Windows:
-
-    .\gradlew.bat test
-
-Linux/macOS:
-
-    ./gradlew test
-
-## Building
-
-Windows:
-
-    .\gradlew.bat clean build
-
-Linux/macOS:
-
-    ./gradlew clean build
-
-## Project Structure
-
-The backend is organized into feature-based packages:
-
-- user
-- team
-- mission
-- puzzle
-- evidence
-- progress
-- integration
-- config
-- common
-- security
-
-## Development Workflow
-
-All development follows:
-
-Issue → Branch → Commit → Push → Pull Request
-→ Code Review → CI → Merge
-
-Direct commits to main are not permitted.
-
-## Team
-
-EscapeHub is developed as part of the Software Engineering
-Laboratory semester project.
+```bash
+git clone https://github.com/GreyTimes/EscapeHub.git
+cd EscapeHub

@@ -1,3 +1,4 @@
+
 package com.escapehub.escapehub.mission.map.dto;
 
 import java.util.List;
@@ -8,8 +9,26 @@ public record MapResponse(
         UUID missionVersionId,
         UUID currentNodeId,
         List<MapNodeResponse> nodes,
-        List<Connection> connections
+        List<Connection> connections,
+        List<MapPlayerResponse> players
 ) {
+    public MapResponse(
+            UUID sessionId,
+            UUID missionVersionId,
+            UUID currentNodeId,
+            List<MapNodeResponse> nodes,
+            List<Connection> connections
+    ) {
+        this(
+                sessionId,
+                missionVersionId,
+                currentNodeId,
+                nodes,
+                connections,
+                List.of()
+        );
+    }
+
     public record Connection(UUID sourceNodeId, UUID targetNodeId) {
     }
 }

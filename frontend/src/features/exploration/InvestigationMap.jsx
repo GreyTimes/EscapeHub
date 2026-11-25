@@ -189,6 +189,7 @@ function InvestigationMap({ sessionId }) {
                     </div>
 
                     <RoomDetails
+                        sessionId={sessionId}
                         room={selectedNode}
                         isCurrent={selectedNode?.id === mapData.currentNodeId}
                         isConnected={selectedNode ? connectedIds.has(selectedNode.id) : false}

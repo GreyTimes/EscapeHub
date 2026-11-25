@@ -12,6 +12,11 @@ import com.escapehub.escapehub.mission.session.entity.SessionMode;
 import com.escapehub.escapehub.mission.session.repository.MissionSessionRepository;
 import com.escapehub.escapehub.mission.session.repository.SessionMemberRepository;
 import com.escapehub.escapehub.mission.session.service.SessionException;
+import com.escapehub.escapehub.mission.session.entity.ParticipationStatus;
+import com.escapehub.escapehub.user.entity.User;
+import com.escapehub.escapehub.user.entity.UserRole;
+import com.escapehub.escapehub.user.repository.UserRepository;
+import com.escapehub.escapehub.mission.map.dto.MapPlayerResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +42,8 @@ class MissionMapServiceTest {
     private MissionNodeRepository missionNodeRepository;
     @Mock
     private NodeConnectionRepository nodeConnectionRepository;
+    @Mock
+    private UserRepository userRepository;
 
     private MissionMapService mapService;
 
@@ -50,7 +57,8 @@ class MissionMapServiceTest {
                 sessionRepository,
                 memberRepository,
                 missionNodeRepository,
-                nodeConnectionRepository
+                nodeConnectionRepository,
+                userRepository
         );
     }
 
@@ -106,6 +114,78 @@ class MissionMapServiceTest {
         assertEquals(1, response.connections().size());
         assertTrue(response.nodes().getFirst().connectedNodeIds().contains(libraryNodeId));
         assertTrue(response.nodes().getLast().connectedNodeIds().contains(startNodeId));
+    }
+
+    @Test
+    void getMapReturnsLocationsOfAllActivePlayers() {
+        UUID startNodeId = UUID.randomUUID();
+        UUID libraryNodeId = UUID.randomUUID();
+
+        UUID teammateId = UUID.randomUUID();
+        UUID departedPlayerId = UUID.randomUUID();
+
+        MissionSession session = new MissionSession(missionVersionId, SessionMode.TEAM, UUID.randomUUID(), userId);
+        session.setId(sessionId);
+
+        SessionMember currentMember = new SessionMember(sessionId, userId);
+        currentMember.setCurrentNodeId(startNodeId);
+
+        SessionMember teammate = new SessionMember(sessionId, teammateId);
+        teammate.setCurrentNodeId(libraryNodeId);
+
+        SessionMember departedPlayer = new SessionMember(sessionId, departedPlayerId);
+        departedPlayer.setCurrentNodeId(startNodeId);
+        departedPlayer.setParticipationStatus(ParticipationStatus.LEFT);
+
+        User currentUser = new User("Current Player", UserRole.PLAYER);
+        currentUser.setId(userId);
+
+        User teammateUser = new User("Teammate", UserRole.PLAYER);
+        teammateUser.setId(teammateId);
+
+        MissionNode startNode = createNode(startNodeId, "entry", "Archive", 50, 12, true);
+        MissionNode libraryNode = createNode(libraryNodeId, "library", "Library", 20, 52, false);
+
+        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(memberRepository.findBySessionIdAndUserId(sessionId, userId))
+                .thenReturn(Optional.of(currentMember));
+
+        when(memberRepository.findBySessionId(sessionId))
+                .thenReturn(List.of(currentMember, teammate, departedPlayer));
+
+        when(userRepository.findAllById(List.of(userId, teammateId)))
+                .thenReturn(List.of(currentUser, teammateUser));
+
+        when(missionNodeRepository.findByMissionVersionId(missionVersionId))
+                .thenReturn(List.of(startNode, libraryNode));
+
+        when(nodeConnectionRepository.findBySourceNodeIdIn(List.of(startNodeId, libraryNodeId)))
+                .thenReturn(List.of(createConnection(startNodeId, libraryNodeId)));
+
+        MapResponse response = mapService.getMap(sessionId, userId);
+
+        assertEquals(2, response.players().size());
+
+        MapPlayerResponse currentPlayer = response.players().stream()
+                .filter(MapPlayerResponse::currentPlayer)
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(userId, currentPlayer.userId());
+        assertEquals("Current Player", currentPlayer.displayName());
+        assertEquals(startNodeId, currentPlayer.currentNodeId());
+
+        MapPlayerResponse otherPlayer = response.players().stream()
+                .filter(player -> player.userId().equals(teammateId))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals("Teammate", otherPlayer.displayName());
+        assertEquals(libraryNodeId, otherPlayer.currentNodeId());
+        assertFalse(otherPlayer.currentPlayer());
+
+        assertTrue(response.players().stream()
+                .noneMatch(player -> player.userId().equals(departedPlayerId)));
     }
 
     @Test

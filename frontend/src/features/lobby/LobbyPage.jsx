@@ -1,75 +1,23 @@
 import { useState } from 'react';
 
 import {
-    createLobby,
     getLobby,
-    joinLobby,
     startLobbyMission
 } from '../../services/lobbyApi';
+
 import LobbyMembers from './LobbyMembers';
 
 function LobbyPage({
-    missionVersionId,
-    currentUserId,
-    onSessionStarted,
-    onBack
-}) {
-    const [teamIdInput, setTeamIdInput] = useState('');
-    const [lobbyIdInput, setLobbyIdInput] = useState('');
-    const [lobby, setLobby] = useState(null);
+                       initialLobby,
+                       currentUserId,
+                       onSessionStarted
+                   }) {
+    const [lobby, setLobby] = useState(initialLobby);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    async function handleCreateLobby(event) {
-        event.preventDefault();
-
-        const teamId = teamIdInput.trim();
-        if (!teamId) {
-            setError('Team ID is required.');
-            return;
-        }
-
-        setError(null);
-        setLoading(true);
-
-        try {
-            const created = await createLobby(teamId, missionVersionId);
-            setLobby(created);
-        } catch (requestError) {
-            setError(requestError.message);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function handleOpenLobby(event) {
-        event.preventDefault();
-
-        const lobbyId = lobbyIdInput.trim();
-        if (!lobbyId) {
-            setError('Lobby ID is required.');
-            return;
-        }
-
-        setError(null);
-        setLoading(true);
-
-        try {
-            const loaded = await getLobby(lobbyId);
-            setLobby(loaded);
-        } catch (requestError) {
-            setError(requestError.message);
-        } finally {
-            setLoading(false);
-        }
-    }
+    const [error, setError] = useState('');
 
     async function handleRefresh() {
-        if (!lobby) {
-            return;
-        }
-
-        setError(null);
+        setError('');
         setLoading(true);
 
         try {
@@ -82,30 +30,8 @@ function LobbyPage({
         }
     }
 
-    async function handleJoinLobby() {
-        if (!lobby) {
-            return;
-        }
-
-        setError(null);
-        setLoading(true);
-
-        try {
-            const updated = await joinLobby(lobby.id);
-            setLobby(updated);
-        } catch (requestError) {
-            setError(requestError.message);
-        } finally {
-            setLoading(false);
-        }
-    }
-
     async function handleStartMission() {
-        if (!lobby) {
-            return;
-        }
-
-        setError(null);
+        setError('');
         setLoading(true);
 
         try {
@@ -118,101 +44,65 @@ function LobbyPage({
         }
     }
 
-    const isLeader = lobby && currentUserId && lobby.createdByUserId === currentUserId;
-    const isMember = lobby && currentUserId && lobby.members.some((m) => m.userId === currentUserId);
-    const hasEnoughParticipants = lobby && lobby.members.length >= 2;
+    const members = lobby.members ?? [];
+    const isLeader =
+        lobby.createdByUserId === currentUserId;
+
+    const hasEnoughParticipants = members.length >= 2;
 
     return (
-        <section>
-            <h2>Team Lobby</h2>
+        <section style={{ marginTop: '20px' }}>
+            <h3>Team Lobby</h3>
 
-            {!lobby ? (
-                <div>
-                    <form onSubmit={handleCreateLobby}>
-                        <h3>Create a new lobby (Team Leader)</h3>
-                        <label>
-                            Team ID:{' '}
-                            <input
-                                type="text"
-                                value={teamIdInput}
-                                onChange={(event) => setTeamIdInput(event.target.value)}
-                                placeholder="Team UUID"
-                                disabled={loading}
-                            />
-                        </label>{' '}
-                        <button type="submit" disabled={loading}>
-                            {loading ? 'Creating...' : 'Create Lobby'}
-                        </button>
-                    </form>
+            <p>
+                Mission: The selected mission will begin when
+                the team leader starts it.
+            </p>
 
-                    <form onSubmit={handleOpenLobby}>
-                        <h3>Open an existing lobby</h3>
-                        <label>
-                            Lobby ID:{' '}
-                            <input
-                                type="text"
-                                value={lobbyIdInput}
-                                onChange={(event) => setLobbyIdInput(event.target.value)}
-                                placeholder="Lobby UUID"
-                                disabled={loading}
-                            />
-                        </label>{' '}
-                        <button type="submit" disabled={loading}>
-                            {loading ? 'Loading...' : 'Open Lobby'}
-                        </button>
-                    </form>
-                </div>
-            ) : (
-                <div>
-                    <p><strong>Lobby ID:</strong> {lobby.id}</p>
-                    <p><strong>Team ID:</strong> {lobby.teamId}</p>
-                    <p><strong>Status:</strong> {lobby.status}</p>
+            <p>
+                <strong>Status:</strong> {lobby.status}
+            </p>
 
-                    <LobbyMembers
-                        members={lobby.members}
-                        createdByUserId={lobby.createdByUserId}
-                    />
+            <p>
+                <strong>Players:</strong> {members.length} / 6
+            </p>
 
-                    <div>
-                        <button
-                            type="button"
-                            onClick={handleRefresh}
-                            disabled={loading}
-                        >
-                            Refresh
-                        </button>
+            <LobbyMembers
+                members={members}
+                createdByUserId={lobby.createdByUserId}
+            />
 
-                        {lobby.status === 'WAITING' && !isMember && (
-                            <>
-                                {' '}
-                                <button
-                                    type="button"
-                                    onClick={handleJoinLobby}
-                                    disabled={loading}
-                                >
-                                    Join Lobby
-                                </button>
-                            </>
-                        )}
+            <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={loading}
+            >
+                {loading ? 'Refreshing...' : 'Refresh Members'}
+            </button>
 
-                        {lobby.status === 'WAITING' && isLeader && (
-                            <>
-                                {' '}
-                                <button
-                                    type="button"
-                                    onClick={handleStartMission}
-                                    disabled={loading || !hasEnoughParticipants}
-                                >
-                                    {loading ? 'Starting...' : 'Start Mission'}
-                                </button>
-                            </>
-                        )}
-                    </div>
+            {lobby.status === 'WAITING' && isLeader && (
+                <div style={{ marginTop: '16px' }}>
+                    <button
+                        type="button"
+                        onClick={handleStartMission}
+                        disabled={loading || !hasEnoughParticipants}
+                    >
+                        {loading ? 'Starting...' : 'Start Mission'}
+                    </button>
 
-                    {lobby.status === 'WAITING' && isLeader && !hasEnoughParticipants && (
-                        <p>At least 2 participants are required to start the mission.</p>
+                    {!hasEnoughParticipants && (
+                        <p>
+                            At least two players are required
+                            before the mission can start.
+                        </p>
                     )}
                 </div>
+            )}
+
+            {lobby.status === 'WAITING' && !isLeader && (
+                <p>
+                    Waiting for the team leader to start the mission...
+                </p>
             )}
 
             {error && (
@@ -220,12 +110,6 @@ function LobbyPage({
                     {error}
                 </p>
             )}
-
-            <p>
-                <button type="button" onClick={onBack} disabled={loading}>
-                    Back to Play Mode
-                </button>
-            </p>
         </section>
     );
 }

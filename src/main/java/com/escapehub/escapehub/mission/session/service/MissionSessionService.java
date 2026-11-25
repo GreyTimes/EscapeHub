@@ -13,7 +13,7 @@ import com.escapehub.escapehub.mission.map.repository.MissionNodeRepository;
 import com.escapehub.escapehub.mission.session.entity.ParticipationStatus;
 import java.time.Instant;
 import java.util.List;
-
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -84,6 +84,17 @@ public class MissionSessionService {
         }
 
         return session;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<MissionSession> getActiveSessionForUser(UUID userId) {
+        requireUser(userId);
+
+        return memberRepository.findActiveSessionsForUser(
+                userId,
+                ParticipationStatus.ACTIVE,
+                MissionSessionStatus.ACTIVE
+        ).stream().findFirst();
     }
 
     @Transactional
