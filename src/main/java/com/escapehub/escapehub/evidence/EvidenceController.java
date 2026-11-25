@@ -1,6 +1,6 @@
 package com.escapehub.escapehub.evidence;
 
-import com.escapehub.escapehub.evidence.dto.DiscoverEvidenceRequest;
+import com.escapehub.escapehub.config.DevelopmentCurrentUserFilter;
 import com.escapehub.escapehub.evidence.dto.EvidenceJournalEntryResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -19,8 +19,14 @@ public class EvidenceController {
     }
 
     @GetMapping
-    public List<EvidenceJournalEntryResponse> getEvidenceJournal(@PathVariable UUID sessionId) {
-        return evidenceService.getEvidenceJournal(sessionId);
+    public List<EvidenceJournalEntryResponse> getEvidenceJournal(
+            @PathVariable UUID sessionId,
+            @RequestAttribute(
+                    name = DevelopmentCurrentUserFilter.CURRENT_USER_ID_ATTRIBUTE,
+                    required = false
+            ) UUID currentUserId
+    ) {
+        return evidenceService.getEvidenceJournal(sessionId, currentUserId);
     }
 
     @PostMapping("/{evidenceId}/discover")
@@ -28,8 +34,11 @@ public class EvidenceController {
     public EvidenceJournalEntryResponse discoverEvidence(
             @PathVariable UUID sessionId,
             @PathVariable UUID evidenceId,
-            @RequestBody DiscoverEvidenceRequest request
+            @RequestAttribute(
+                    name = DevelopmentCurrentUserFilter.CURRENT_USER_ID_ATTRIBUTE,
+                    required = false
+            ) UUID currentUserId
     ) {
-        return evidenceService.discoverEvidence(sessionId, evidenceId, request);
+        return evidenceService.discoverEvidence(sessionId, evidenceId, currentUserId);
     }
 }

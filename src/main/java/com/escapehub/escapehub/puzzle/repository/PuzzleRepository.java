@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface PuzzleRepository extends JpaRepository<Puzzle, UUID> {
     List<Puzzle> findByNodeId(UUID nodeId);
+    boolean existsByNodeIdAndPuzzleKey(UUID nodeId, String puzzleKey);
 }

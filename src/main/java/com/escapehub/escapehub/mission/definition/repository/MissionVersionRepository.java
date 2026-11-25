@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface MissionVersionRepository extends JpaRepository<MissionVersion, UUID> {
     Optional<MissionVersion> findTopByMissionIdOrderByVersionNumberDesc(UUID missionId);
+    Optional<MissionVersion> findByMissionIdAndVersionNumber(UUID missionId, Integer versionNumber);
 }

@@ -1,4 +1,4 @@
-package com.escapehub.escapehub.evidence;
+package com.escapehub.escapehub.evidence.session;
 
 import jakarta.persistence.*;
 import java.time.Instant;

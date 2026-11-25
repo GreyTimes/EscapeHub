@@ -8,7 +8,7 @@ public record EvidenceJournalEntryResponse(
         UUID evidenceId,
         String title,
         String description,
-        UUID roomId,
+        UUID nodeId,
         UUID discoveredByUserId,
         Instant discoveredAt
 ) {

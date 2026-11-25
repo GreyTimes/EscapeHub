@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "mission": {
+    "key": "blackwood-case",
+    "title": "The Blackwood Case",
+    "description": "Investigate the Central Archive, Old Library and Curator Office to uncover the Blackwood record.",
+    "versionNumber": 1
+  },
+  "nodes": [
+    {
+      "key": "entry",
+      "title": "Central Archive",
+      "description": "A plaque above the entrance displays the accession code B-1894.",
+      "position": {
+        "x": 50,
+        "y": 12
+      },
+      "startNode": true
+    },
+    {
+      "key": "library",
+      "title": "Old Library",
+      "description": "A catalogue entry states that the Blackwood collection was catalogued in 1894.",
+      "position": {
+        "x": 20,
+        "y": 52
+      },
+      "startNode": false
+    },
+    {
+      "key": "office",
+      "title": "Curator Office",
+      "description": "A signed letter from the curator carries the surname Blackwood.",
+      "position": {
+        "x": 80,
+        "y": 52
+      },
+      "startNode": false
+    },
+    {
+      "key": "vault",
+      "title": "Hidden Vault",
+      "description": "A concealed archive beneath the library.",
+      "position": {
+        "x": 20,
+        "y": 88
+      },
+      "startNode": false
+    }
+  ],
+  "connections": [
+    {
+      "from": "entry",
+      "to": "library"
+    },
+    {
+      "from": "entry",
+      "to": "office"
+    },
+    {
+      "from": "library",
+      "to": "vault"
+    }
+  ],
+  "puzzles": [
+    {
+      "key": "archive-code",
+      "node": "entry",
+      "question": "What is the first letter of the accession code displayed on the archive entrance plaque?",
+      "correctAnswer": "B",
+      "finalPuzzle": false
+    },
+    {
+      "key": "library-year",
+      "node": "library",
+      "question": "In what year was the Blackwood collection catalogued?",
+      "correctAnswer": "1894",
+      "finalPuzzle": false
+    },
+    {
+      "key": "curator-name",
+      "node": "office",
+      "question": "What surname appears on the curator's signed letter?",
+      "correctAnswer": "Blackwood",
+      "finalPuzzle": false
+    },
+    {
+      "key": "vault-final",
+      "node": "vault",
+      "question": "Enter the collection year and surname together (YEAR-SURNAME).",
+      "correctAnswer": "1894-BLACKWOOD",
+      "finalPuzzle": true
+    }
+  ],
+  "evidence": [
+    {
+      "key": "catalogue-card",
+      "node": "library",
+      "title": "Catalogue Card",
+      "description": "A card records that the collection was catalogued in 1894."
+    },
+    {
+      "key": "signed-note",
+      "node": "office",
+      "title": "Signed Note",
+      "description": "The curator signed the note with the surname Blackwood."
+    }
+  ],
+  "inventoryItems": [
+    {
+      "key": "brass-key",
+      "node": "office",
+      "title": "Brass Key",
+      "description": "A small brass key found in the curator's desk."
+    }
+  ]
+}

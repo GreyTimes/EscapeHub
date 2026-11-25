@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { abandonSession } from '../../services/sessionApi';
 import InvestigationMap from '../exploration/InvestigationMap';
+import EvidenceJournal from '../evidence/EvidenceJournal';
 
 function ActiveSession({ session, onSessionAbandoned }) {
     const [loading, setLoading] = useState(false);
@@ -33,13 +34,17 @@ function ActiveSession({ session, onSessionAbandoned }) {
             )}
 
             {session.status === 'ACTIVE' && (
-                <button
-                    type="button"
-                    onClick={handleAbandon}
-                    disabled={loading}
-                >
-                    {loading ? 'Abandoning...' : 'Abandon Session'}
-                </button>
+                <>
+                    <button
+                        type="button"
+                        onClick={handleAbandon}
+                        disabled={loading}
+                    >
+                        {loading ? 'Abandoning...' : 'Abandon Session'}
+                    </button>
+
+                    <InvestigationMap sessionId={session.id} />
+                </>
             )}
 
             {error && (
@@ -47,9 +52,8 @@ function ActiveSession({ session, onSessionAbandoned }) {
                     {error}
                 </p>
             )}
-        {session.status === 'ACTIVE' && (
-                     <InvestigationMap sessionId={session.id} />
-                 )}
+
+            <EvidenceJournal sessionId={session.id} />
         </section>
     );
 }

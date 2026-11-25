@@ -1,4 +1,4 @@
-package com.escapehub.escapehub.evidence;
+package com.escapehub.escapehub.evidence.session;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
