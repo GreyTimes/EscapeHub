@@ -1,4 +1,4 @@
-package com.escapehub.escapehub.evidence;
+package com.escapehub.escapehub.evidence.service;
 
 import com.escapehub.escapehub.evidence.dto.EvidenceJournalEntryResponse;
 import com.escapehub.escapehub.evidence.entity.Evidence;

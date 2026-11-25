@@ -1,6 +1,7 @@
-package com.escapehub.escapehub.evidence;
+package com.escapehub.escapehub.evidence.controller;
 
 import com.escapehub.escapehub.config.DevelopmentCurrentUserFilter;
+import com.escapehub.escapehub.evidence.service.EvidenceService;
 import com.escapehub.escapehub.evidence.dto.EvidenceJournalEntryResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
