@@ -1,19 +1,25 @@
+
 package com.escapehub.escapehub.mission.map.service;
 
 import com.escapehub.escapehub.mission.map.dto.MapNodeResponse;
+import com.escapehub.escapehub.mission.map.dto.MapPlayerResponse;
 import com.escapehub.escapehub.mission.map.dto.MapResponse;
 import com.escapehub.escapehub.mission.map.entity.MissionNode;
 import com.escapehub.escapehub.mission.map.entity.NodeConnection;
 import com.escapehub.escapehub.mission.map.repository.MissionNodeRepository;
 import com.escapehub.escapehub.mission.map.repository.NodeConnectionRepository;
 import com.escapehub.escapehub.mission.session.entity.MissionSession;
+import com.escapehub.escapehub.mission.session.entity.ParticipationStatus;
 import com.escapehub.escapehub.mission.session.entity.SessionMember;
 import com.escapehub.escapehub.mission.session.repository.MissionSessionRepository;
 import com.escapehub.escapehub.mission.session.repository.SessionMemberRepository;
 import com.escapehub.escapehub.mission.session.service.SessionException;
+import com.escapehub.escapehub.user.entity.User;
+import com.escapehub.escapehub.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -28,17 +34,20 @@ public class MissionMapService {
     private final SessionMemberRepository memberRepository;
     private final MissionNodeRepository missionNodeRepository;
     private final NodeConnectionRepository nodeConnectionRepository;
+    private final UserRepository userRepository;
 
     public MissionMapService(
             MissionSessionRepository sessionRepository,
             SessionMemberRepository memberRepository,
             MissionNodeRepository missionNodeRepository,
-            NodeConnectionRepository nodeConnectionRepository
+            NodeConnectionRepository nodeConnectionRepository,
+            UserRepository userRepository
     ) {
         this.sessionRepository = sessionRepository;
         this.memberRepository = memberRepository;
         this.missionNodeRepository = missionNodeRepository;
         this.nodeConnectionRepository = nodeConnectionRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)
@@ -65,6 +74,13 @@ public class MissionMapService {
         }
 
         SessionMember member = findMemberOrThrow(sessionId, currentUserId);
+
+        if (member.getParticipationStatus() != ParticipationStatus.ACTIVE) {
+            throw new SessionException(
+                    SessionException.Reason.NOT_A_SESSION_MEMBER,
+                    "You are not an active member of this session."
+            );
+        }
 
         MissionNode targetNode = missionNodeRepository.findById(targetNodeId)
                 .filter(node -> node.getMissionVersionId().equals(session.getMissionVersionId()))
@@ -116,6 +132,7 @@ public class MissionMapService {
         for (UUID nodeId : nodeIds) {
             adjacency.put(nodeId, new LinkedHashSet<>());
         }
+
         for (NodeConnection connection : connections) {
             adjacency.get(connection.getSourceNodeId()).add(connection.getTargetNodeId());
             adjacency.get(connection.getTargetNodeId()).add(connection.getSourceNodeId());
@@ -135,13 +152,52 @@ public class MissionMapService {
                 ))
                 .toList();
 
+        List<MapPlayerResponse> players = buildPlayerResponses(session.getId(), member.getUserId());
+
         return new MapResponse(
                 session.getId(),
                 session.getMissionVersionId(),
                 member.getCurrentNodeId(),
                 nodeResponses,
-                connectionResponses
+                connectionResponses,
+                players
         );
+    }
+
+    private List<MapPlayerResponse> buildPlayerResponses(UUID sessionId, UUID currentUserId) {
+        List<SessionMember> activeMembers = memberRepository.findBySessionId(sessionId).stream()
+                .filter(sessionMember ->
+                        sessionMember.getParticipationStatus() == ParticipationStatus.ACTIVE
+                )
+                .toList();
+
+        if (activeMembers.isEmpty()) {
+            return List.of();
+        }
+
+        List<UUID> userIds = activeMembers.stream()
+                .map(SessionMember::getUserId)
+                .toList();
+
+        Map<UUID, User> usersById = new HashMap<>();
+        for (User user : userRepository.findAllById(userIds)) {
+            usersById.put(user.getId(), user);
+        }
+
+        List<MapPlayerResponse> players = new ArrayList<>();
+
+        for (SessionMember sessionMember : activeMembers) {
+            User user = usersById.get(sessionMember.getUserId());
+
+            players.add(new MapPlayerResponse(
+                    sessionMember.getUserId(),
+                    user != null ? user.getDisplayName() : "Unknown player",
+                    sessionMember.getCurrentNodeId(),
+                    sessionMember.getUserId().equals(currentUserId)
+            ));
+        }
+
+        return List.copyOf(players);
     }
 
     private MissionSession findSessionOrThrow(UUID sessionId) {

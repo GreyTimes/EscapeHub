@@ -115,6 +115,44 @@ public class LobbyService {
         return LobbyResponse.from(lobby, members);
     }
 
+    @Transactional(readOnly = true)
+    public LobbyResponse getWaitingLobbyForTeam(
+            UUID teamId,
+            UUID currentUserId
+    ) {
+        requireUser(currentUserId);
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new SessionException(
+                        SessionException.Reason.TEAM_NOT_FOUND,
+                        "Team not found."
+                ));
+
+        if (!teamMemberRepository.existsByTeamIdAndUserId(
+                teamId, currentUserId
+        )) {
+            throw new SessionException(
+                    SessionException.Reason.FORBIDDEN_ACTION,
+                    "Only team members can view this lobby."
+            );
+        }
+
+        Lobby lobby = lobbyRepository.findByTeamIdAndStatus(
+                        teamId, LobbyStatus.WAITING
+                )
+                .orElseThrow(() -> new SessionException(
+                        SessionException.Reason.LOBBY_NOT_FOUND,
+                        "This team does not have a waiting lobby."
+                ));
+
+        List<LobbyMember> members =
+                lobbyMemberRepository.findByLobbyIdOrderByJoinedAtAsc(
+                        lobby.getId()
+                );
+
+        return LobbyResponse.from(lobby, members);
+    }
+
     @Transactional
     public LobbyResponse joinLobby(UUID lobbyId, UUID currentUserId) {
         requireUser(currentUserId);

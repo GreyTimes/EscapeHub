@@ -12,12 +12,14 @@ import com.escapehub.escapehub.mission.session.entity.ParticipationStatus;
 import com.escapehub.escapehub.mission.session.entity.SessionMember;
 import com.escapehub.escapehub.mission.session.repository.MissionSessionRepository;
 import com.escapehub.escapehub.mission.session.repository.SessionMemberRepository;
+import com.escapehub.escapehub.evidence.dto.AvailableEvidenceResponse;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Set;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +111,79 @@ public class EvidenceService {
                     "Evidence has already been discovered in this session."
             );
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<AvailableEvidenceResponse> getAvailableEvidence(
+            UUID sessionId,
+            UUID nodeId,
+            UUID currentUserId
+    ) {
+        if (sessionId == null || nodeId == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Session ID and room ID are required."
+            );
+        }
+
+        if (currentUserId == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "A current session user is required."
+            );
+        }
+
+        MissionSession session = findSession(sessionId);
+
+        if (!session.isActive()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "The mission session is not active."
+            );
+        }
+
+        SessionMember member = findMember(sessionId, currentUserId);
+
+        if (member.getParticipationStatus() != ParticipationStatus.ACTIVE) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You are not an active member of this session."
+            );
+        }
+
+        MissionNode node = nodeRepository.findById(nodeId)
+                .filter(found ->
+                        found.getMissionVersionId().equals(session.getMissionVersionId())
+                )
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Room not found in this mission."
+                ));
+
+        if (member.getCurrentNodeId() == null ||
+                !member.getCurrentNodeId().equals(node.getId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "You must be in this room to view its evidence."
+            );
+        }
+
+        Set<UUID> discoveredEvidenceIds =
+                discoveryRepository.findAllBySessionIdOrderByDiscoveredAtAsc(sessionId)
+                        .stream()
+                        .map(SessionEvidenceDiscovery::getEvidenceId)
+                        .collect(Collectors.toSet());
+
+        return evidenceRepository.findByNodeId(nodeId)
+                .stream()
+                .filter(evidence -> !discoveredEvidenceIds.contains(evidence.getId()))
+                .map(evidence -> new AvailableEvidenceResponse(
+                        evidence.getId(),
+                        evidence.getTitle(),
+                        evidence.getDescription(),
+                        evidence.getNodeId()
+                ))
+                .toList();
     }
 
     @Transactional(readOnly = true)

@@ -1,3 +1,4 @@
+
 package com.escapehub.escapehub.mission.session.controller;
 
 import com.escapehub.escapehub.config.DevelopmentCurrentUserFilter;
@@ -10,11 +11,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1")
 public class MissionSessionController {
+
     private final MissionSessionService sessionService;
 
     public MissionSessionController(MissionSessionService sessionService) {
@@ -25,7 +28,10 @@ public class MissionSessionController {
     public ResponseEntity<SessionResponse> startSession(
             @PathVariable UUID missionId,
             @Valid @RequestBody StartSessionRequest request,
-            @RequestAttribute(name = DevelopmentCurrentUserFilter.CURRENT_USER_ID_ATTRIBUTE, required = false)
+            @RequestAttribute(
+                    name = DevelopmentCurrentUserFilter.CURRENT_USER_ID_ATTRIBUTE,
+                    required = false
+            )
             UUID currentUserId
     ) {
         MissionSession session = sessionService.startSession(
@@ -42,17 +48,44 @@ public class MissionSessionController {
     @GetMapping("/sessions/{sessionId}")
     public SessionResponse getSession(
             @PathVariable UUID sessionId,
-            @RequestAttribute(name = DevelopmentCurrentUserFilter.CURRENT_USER_ID_ATTRIBUTE, required = false)
+            @RequestAttribute(
+                    name = DevelopmentCurrentUserFilter.CURRENT_USER_ID_ATTRIBUTE,
+                    required = false
+            )
             UUID currentUserId
     ) {
         return SessionResponse.from(
                 sessionService.getSessionForUser(sessionId, currentUserId)
         );
     }
+
+    @GetMapping("/sessions/active")
+    public ResponseEntity<SessionResponse> getActiveSession(
+            @RequestAttribute(
+                    name = DevelopmentCurrentUserFilter.CURRENT_USER_ID_ATTRIBUTE,
+                    required = false
+            )
+            UUID currentUserId
+    ) {
+        Optional<MissionSession> activeSession =
+                sessionService.getActiveSessionForUser(currentUserId);
+
+        if (activeSession.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(
+                SessionResponse.from(activeSession.get())
+        );
+    }
+
     @PostMapping("/sessions/{sessionId}/abandon")
     public SessionResponse abandonSession(
             @PathVariable UUID sessionId,
-            @RequestAttribute(name = DevelopmentCurrentUserFilter.CURRENT_USER_ID_ATTRIBUTE, required = false)
+            @RequestAttribute(
+                    name = DevelopmentCurrentUserFilter.CURRENT_USER_ID_ATTRIBUTE,
+                    required = false
+            )
             UUID currentUserId
     ) {
         return SessionResponse.from(

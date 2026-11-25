@@ -1,3 +1,4 @@
+
 import { apiRequest } from './api';
 
 export const PLAY_MODES = Object.freeze({
@@ -16,6 +17,11 @@ export function startSession(missionId, missionVersionId, mode) {
 // GET /api/v1/sessions/{sessionId}
 export function getSession(sessionId) {
     return apiRequest(`/sessions/${sessionId}`);
+}
+
+// GET /api/v1/sessions/active
+export function getActiveSession() {
+    return apiRequest('/sessions/active');
 }
 
 // POST /api/v1/sessions/{sessionId}/abandon

@@ -12,3 +12,9 @@ export function discoverEvidence(sessionId, evidenceId) {
         }
     );
 }
+
+export function getAvailableRoomEvidence(sessionId, nodeId) {
+    return apiRequest(
+        `/sessions/${sessionId}/nodes/${nodeId}/evidence`
+    );
+}
