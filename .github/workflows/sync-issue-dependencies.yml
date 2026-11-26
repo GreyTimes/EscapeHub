@@ -1,0 +1,285 @@
+
+name: Sync Issue Dependencies with Project Status
+
+on:
+  # Check dependencies every 10 minutes.
+  schedule:
+    - cron: "*/10 * * * *"
+
+  # Allow manual execution from the Actions tab.
+  workflow_dispatch:
+
+  # Recheck when issues are opened, closed, or reopened.
+  issues:
+    types: [opened, closed, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-issue-dependencies
+  cancel-in-progress: false
+
+jobs:
+  sync-status:
+    name: Synchronize Blocked and Ready statuses
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Sync issue dependencies
+        uses: actions/github-script@v9
+        with:
+          # A token with access to the personal Projects board is required.
+          github-token: ${{ secrets.PROJECTS_TOKEN }}
+
+          script: |
+            const OWNER = "GreyTimes";
+            const REPO = "EscapeHub";
+            const PROJECT_NUMBER = 4;
+
+            const projectQuery = `
+              query($login: String!, $number: Int!, $after: String) {
+                user(login: $login) {
+                  projectV2(number: $number) {
+                    id
+
+                    fields(first: 100) {
+                      nodes {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options {
+                            id
+                            name
+                          }
+                        }
+                      }
+                    }
+
+                    items(first: 100, after: $after) {
+                      pageInfo {
+                        hasNextPage
+                        endCursor
+                      }
+
+                      nodes {
+                        id
+
+                        content {
+                          ... on Issue {
+                            number
+                            state
+                            repository {
+                              nameWithOwner
+                            }
+                          }
+                        }
+
+                        fieldValues(first: 50) {
+                          nodes {
+                            ... on ProjectV2ItemFieldSingleSelectValue {
+                              name
+                              field {
+                                ... on ProjectV2SingleSelectField {
+                                  name
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+
+            const updateStatusMutation = `
+              mutation(
+                $projectId: ID!,
+                $itemId: ID!,
+                $fieldId: ID!,
+                $optionId: String!
+              ) {
+                updateProjectV2ItemFieldValue(
+                  input: {
+                    projectId: $projectId
+                    itemId: $itemId
+                    fieldId: $fieldId
+                    value: {
+                      singleSelectOptionId: $optionId
+                    }
+                  }
+                ) {
+                  projectV2Item {
+                    id
+                  }
+                }
+              }
+            `;
+
+            // Retrieve all items from the personal Project.
+            let projectId = null;
+            let statusField = null;
+            let items = [];
+            let cursor = null;
+            let hasNextPage = true;
+
+            while (hasNextPage) {
+              const result = await github.graphql(projectQuery, {
+                login: OWNER,
+                number: PROJECT_NUMBER,
+                after: cursor
+              });
+
+              const project = result.user?.projectV2;
+
+              if (!project) {
+                throw new Error(
+                  `Could not access Project #${PROJECT_NUMBER} owned by ${OWNER}.`
+                );
+              }
+
+              projectId = project.id;
+
+              if (!statusField) {
+                statusField = project.fields.nodes.find(
+                  field => field.name === "Status"
+                );
+
+                if (!statusField) {
+                  throw new Error("The Project does not contain a Status field.");
+                }
+              }
+
+              items.push(...project.items.nodes);
+
+              hasNextPage = project.items.pageInfo.hasNextPage;
+              cursor = project.items.pageInfo.endCursor;
+            }
+
+            const blockedOption = statusField.options.find(
+              option => option.name === "Blocked"
+            );
+
+            const readyOption = statusField.options.find(
+              option => option.name === "Ready"
+            );
+
+            if (!blockedOption || !readyOption) {
+              throw new Error(
+                'The Status field must contain "Blocked" and "Ready" options.'
+              );
+            }
+
+            const repositoryName = `${OWNER}/${REPO}`.toLowerCase();
+
+            let movedToBlocked = 0;
+            let movedToReady = 0;
+            let checkedIssues = 0;
+
+            for (const item of items) {
+              const issue = item.content;
+
+              // Ignore draft issues, pull requests, and issues from other repositories.
+              if (
+                !issue ||
+                issue.repository?.nameWithOwner?.toLowerCase() !== repositoryName
+              ) {
+                continue;
+              }
+
+              // Closed issues are handled by the normal Project "Item closed" workflow.
+              if (issue.state !== "OPEN") {
+                continue;
+              }
+
+              const currentStatus = item.fieldValues.nodes.find(
+                value => value.field?.name === "Status"
+              )?.name ?? null;
+
+              // Do not overwrite completed work.
+              if (currentStatus === "Done") {
+                continue;
+              }
+
+              checkedIssues++;
+
+              // Retrieve the issues that block this issue.
+              const response = await github.request(
+                "GET /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by",
+                {
+                  owner: OWNER,
+                  repo: REPO,
+                  issue_number: issue.number,
+                  per_page: 100,
+                  headers: {
+                    accept: "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2026-03-10"
+                  }
+                }
+              );
+
+              const blockers = response.data ?? [];
+
+              const openBlockers = blockers.filter(
+                blocker => blocker.state?.toLowerCase() === "open"
+              );
+
+              let targetOption = null;
+
+              // At least one open dependency means this issue is blocked.
+              if (openBlockers.length > 0 && currentStatus !== "Blocked") {
+                targetOption = blockedOption;
+              }
+
+              // When every dependency is resolved, move Blocked issues to Ready.
+              else if (
+                openBlockers.length === 0 &&
+                currentStatus === "Blocked"
+              ) {
+                targetOption = readyOption;
+              }
+
+              // Keep all other statuses unchanged.
+              if (!targetOption) {
+                core.info(
+                  `#${issue.number}: no status change (currently ${currentStatus ?? "unset"}).`
+                );
+                continue;
+              }
+
+              await github.graphql(updateStatusMutation, {
+                projectId,
+                itemId: item.id,
+                fieldId: statusField.id,
+                optionId: targetOption.id
+              });
+
+              if (targetOption.name === "Blocked") {
+                movedToBlocked++;
+
+                core.info(
+                  `#${issue.number} moved to Blocked (${openBlockers.length} open blocker(s)).`
+                );
+              } else {
+                movedToReady++;
+
+                core.info(
+                  `#${issue.number} moved to Ready (all dependencies resolved).`
+                );
+              }
+            }
+
+            core.summary
+              .addHeading("Issue Dependency Synchronization")
+              .addTable([
+                [{data: "Result", header: true}, {data: "Count", header: true}],
+                ["Issues checked", checkedIssues],
+                ["Moved to Blocked", movedToBlocked],
+                ["Moved to Ready", movedToReady]
+              ])
+              .write();
+
+            core.info("Dependency synchronization completed.");
