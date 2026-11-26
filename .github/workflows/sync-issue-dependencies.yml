@@ -1,10 +1,10 @@
-
 name: Sync Issue Dependencies with Project Status
 
 on:
   # Check dependencies every 10 minutes.
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "17 */2 * * *"
+      timezone: "Europe/Athens"
 
   # Allow manual execution from the Actions tab.
   workflow_dispatch:
