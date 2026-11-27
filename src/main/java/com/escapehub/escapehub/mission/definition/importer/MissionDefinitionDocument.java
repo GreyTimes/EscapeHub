@@ -10,7 +10,8 @@ public record MissionDefinitionDocument(
         List<ConnectionData> connections,
         List<PuzzleData> puzzles,
         List<EvidenceData> evidence,
-        List<InventoryItemData> inventoryItems
+        List<InventoryItemData> inventoryItems,
+        List<UnlockRuleData> unlockRules
 ) {
     public record MissionData(String key, String title, String description, Integer versionNumber) {
     }
@@ -43,5 +44,15 @@ public record MissionDefinitionDocument(
     }
 
     public record InventoryItemData(String key, String node, String title, String description) {
+    }
+
+    public record UnlockRuleData(
+            String targetNode,
+            String operator,
+            List<UnlockConditionData> conditions
+    ) {
+    }
+
+    public record UnlockConditionData(String type, String reference) {
     }
 }
