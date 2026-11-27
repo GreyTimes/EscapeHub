@@ -6,8 +6,14 @@ import com.escapehub.escapehub.inventory.entity.InventoryItem;
 import com.escapehub.escapehub.inventory.repository.InventoryItemRepository;
 import com.escapehub.escapehub.mission.definition.entity.Mission;
 import com.escapehub.escapehub.mission.definition.entity.MissionVersion;
+import com.escapehub.escapehub.mission.definition.entity.NodeUnlockCondition;
+import com.escapehub.escapehub.mission.definition.entity.NodeUnlockRule;
+import com.escapehub.escapehub.mission.definition.entity.UnlockConditionType;
+import com.escapehub.escapehub.mission.definition.entity.UnlockOperator;
 import com.escapehub.escapehub.mission.definition.repository.MissionRepository;
 import com.escapehub.escapehub.mission.definition.repository.MissionVersionRepository;
+import com.escapehub.escapehub.mission.definition.repository.NodeUnlockConditionRepository;
+import com.escapehub.escapehub.mission.definition.repository.NodeUnlockRuleRepository;
 import com.escapehub.escapehub.mission.map.entity.MissionNode;
 import com.escapehub.escapehub.mission.map.entity.NodeConnection;
 import com.escapehub.escapehub.mission.map.repository.MissionNodeRepository;
@@ -17,7 +23,9 @@ import com.escapehub.escapehub.puzzle.repository.PuzzleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -30,6 +38,8 @@ public class MissionImportService {
     private final PuzzleRepository puzzleRepository;
     private final EvidenceRepository evidenceRepository;
     private final InventoryItemRepository inventoryItemRepository;
+    private final NodeUnlockRuleRepository nodeUnlockRuleRepository;
+    private final NodeUnlockConditionRepository nodeUnlockConditionRepository;
     private final MissionDefinitionValidator validator;
 
     public MissionImportService(
@@ -40,6 +50,8 @@ public class MissionImportService {
             PuzzleRepository puzzleRepository,
             EvidenceRepository evidenceRepository,
             InventoryItemRepository inventoryItemRepository,
+            NodeUnlockRuleRepository nodeUnlockRuleRepository,
+            NodeUnlockConditionRepository nodeUnlockConditionRepository,
             MissionDefinitionValidator validator
     ) {
         this.missionRepository = missionRepository;
@@ -49,12 +61,18 @@ public class MissionImportService {
         this.puzzleRepository = puzzleRepository;
         this.evidenceRepository = evidenceRepository;
         this.inventoryItemRepository = inventoryItemRepository;
+        this.nodeUnlockRuleRepository = nodeUnlockRuleRepository;
+        this.nodeUnlockConditionRepository = nodeUnlockConditionRepository;
         this.validator = validator;
     }
 
     @Transactional
-    public MissionVersion importMission(MissionDefinitionDocument definition, String sourceJson) {
+    public MissionVersion importMission(
+            MissionDefinitionDocument definition,
+            String sourceJson
+    ) {
         validator.validate(definition);
+
         if (sourceJson == null || sourceJson.isBlank()) {
             throw new IllegalArgumentException("Original mission JSON is required.");
         }
@@ -71,16 +89,20 @@ public class MissionImportService {
         // Mission versions are immutable. Re-importing identical JSON is a no-op;
         // changing existing version content requires a new version number.
         var existingVersion = missionVersionRepository.findByMissionIdAndVersionNumber(
-                mission.getId(), definition.mission().versionNumber()
+                mission.getId(),
+                definition.mission().versionNumber()
         );
+
         if (existingVersion.isPresent()) {
             MissionVersion existing = existingVersion.get();
+
             if (!existing.getContentJson().equals(sourceJson)) {
                 throw new IllegalStateException(
                         "Mission version " + definition.mission().versionNumber()
                                 + " already exists with different content. Create a new version instead."
                 );
             }
+
             return existing;
         }
 
@@ -92,8 +114,10 @@ public class MissionImportService {
         version = missionVersionRepository.saveAndFlush(version);
 
         Map<String, MissionNode> nodesByKey = new HashMap<>();
+
         for (MissionDefinitionDocument.NodeData nodeData : definition.nodes()) {
             MissionNode node = new MissionNode();
+
             node.setMissionVersionId(version.getId());
             node.setNodeKey(nodeData.key());
             node.setTitle(nodeData.title());
@@ -101,19 +125,32 @@ public class MissionImportService {
             node.setMapX(nodeData.position().x());
             node.setMapY(nodeData.position().y());
             node.setStartingNode(Boolean.TRUE.equals(nodeData.startNode()));
+
             node = nodeRepository.save(node);
             nodesByKey.put(nodeData.key(), node);
         }
 
-        for (MissionDefinitionDocument.ConnectionData connectionData : safe(definition.connections())) {
+        for (MissionDefinitionDocument.ConnectionData connectionData
+                : safe(definition.connections())) {
+
             NodeConnection connection = new NodeConnection();
-            connection.setSourceNodeId(nodesByKey.get(connectionData.from()).getId());
-            connection.setTargetNodeId(nodesByKey.get(connectionData.to()).getId());
+
+            connection.setSourceNodeId(
+                    nodesByKey.get(connectionData.from()).getId()
+            );
+
+            connection.setTargetNodeId(
+                    nodesByKey.get(connectionData.to()).getId()
+            );
+
             connectionRepository.save(connection);
         }
 
-        for (MissionDefinitionDocument.PuzzleData puzzleData : safe(definition.puzzles())) {
+        for (MissionDefinitionDocument.PuzzleData puzzleData
+                : safe(definition.puzzles())) {
+
             MissionNode node = nodesByKey.get(puzzleData.node());
+
             puzzleRepository.save(new Puzzle(
                     node.getId(),
                     puzzleData.key(),
@@ -123,29 +160,69 @@ public class MissionImportService {
             ));
         }
 
-        for (MissionDefinitionDocument.EvidenceData evidenceData : safe(definition.evidence())) {
+        for (MissionDefinitionDocument.EvidenceData evidenceData
+                : safe(definition.evidence())) {
+
             Evidence evidence = new Evidence(
                     nodesByKey.get(evidenceData.node()).getId(),
                     evidenceData.key(),
                     evidenceData.title(),
                     evidenceData.description()
             );
+
             evidenceRepository.save(evidence);
         }
 
-        for (MissionDefinitionDocument.InventoryItemData itemData : safe(definition.inventoryItems())) {
+        for (MissionDefinitionDocument.InventoryItemData itemData
+                : safe(definition.inventoryItems())) {
+
             InventoryItem item = new InventoryItem();
+
             item.setNodeId(nodesByKey.get(itemData.node()).getId());
             item.setItemKey(itemData.key());
             item.setTitle(itemData.title());
             item.setDescription(itemData.description());
+
             inventoryItemRepository.save(item);
+        }
+
+        // Persist unlock rules and their conditions for this MissionVersion.
+        for (MissionDefinitionDocument.UnlockRuleData ruleData
+                : safe(definition.unlockRules())) {
+
+            NodeUnlockRule rule = new NodeUnlockRule();
+
+            rule.setMissionVersionId(version.getId());
+            rule.setTargetNodeId(
+                    nodesByKey.get(ruleData.targetNode()).getId()
+            );
+            rule.setOperator(UnlockOperator.valueOf(ruleData.operator()));
+
+            rule = nodeUnlockRuleRepository.saveAndFlush(rule);
+
+            List<NodeUnlockCondition> conditions = new ArrayList<>();
+
+            for (MissionDefinitionDocument.UnlockConditionData conditionData
+                    : safe(ruleData.conditions())) {
+
+                NodeUnlockCondition condition = new NodeUnlockCondition();
+
+                condition.setNodeUnlockRuleId(rule.getId());
+                condition.setConditionType(
+                        UnlockConditionType.valueOf(conditionData.type())
+                );
+                condition.setReferenceKey(conditionData.reference());
+
+                conditions.add(condition);
+            }
+
+            nodeUnlockConditionRepository.saveAll(conditions);
         }
 
         return version;
     }
 
-    private <T> java.util.List<T> safe(java.util.List<T> values) {
-        return values == null ? java.util.List.of() : values;
+    private <T> List<T> safe(List<T> values) {
+        return values == null ? List.of() : values;
     }
 }
