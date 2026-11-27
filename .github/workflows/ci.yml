@@ -1,3 +1,4 @@
+
 name: EscapeHub CI
 
 on:
@@ -19,6 +20,29 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    # PostgreSQL database for integration tests
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: escapehub
+          POSTGRES_USER: escapehub
+          POSTGRES_PASSWORD: local_dev_change_this
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U escapehub -d escapehub"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Environment variables available to backend tests
+    env:
+      POSTGRES_DB: escapehub
+      POSTGRES_USER: escapehub
+      POSTGRES_PASSWORD: local_dev_change_this
+      POSTGRES_PORT: 5432
 
     steps:
       - name: Checkout repository
